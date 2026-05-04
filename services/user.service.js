@@ -18,7 +18,7 @@ async function updateUser(id, name) {
     "UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *",
     [name, id],
   );
-  return "User Updated";
+  return result.rows[0];
 }
 
 async function deleteUser(id) {
@@ -26,7 +26,7 @@ async function deleteUser(id) {
     "DELETE FROM users WHERE id = $1 RETURNING *",
     [id],
   );
-  return "User Deleted";
+  return result.rows[0];
 }
 
 module.exports = { createUser, getUserById, updateUser, deleteUser };

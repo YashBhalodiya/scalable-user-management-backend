@@ -1,3 +1,4 @@
+const redis  = require("../redis/redis");
 const {
   createUser,
   getUserById,
@@ -16,7 +17,7 @@ const createUserController = async (req, res) => {
 
     const user = await createUser(name, email);
 
-    res.status(201).json({ Status: "Success", Message: "User Created" });
+    return res.status(201).json({ Status: "Success", Message: "User Created" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Failed to create user" });
@@ -27,6 +28,18 @@ const createUserController = async (req, res) => {
 const getUserByIdController = async (req, res) => {
   try {
     const { id } = req.params;
+    const key = `user:${id}`
+
+    // First get user from redis
+    const cachedUser = await redis.get(key)
+
+    // if found -> return
+    if(cachedUser) {
+      console.log("Cache Hit");
+      return res.json(JSON.parse(cachedUser))
+    }
+
+    console.log("Cache Miss");
 
     const user = await getUserById(id);
 
@@ -36,10 +49,13 @@ const getUserByIdController = async (req, res) => {
         .json({ Status: "Failed", Message: "User not found." });
     }
 
+    // if not found -> first set in redis then return
+    await redis.set(key, JSON.stringify(user), 'EX', 60)
+
     return res.json({ status: "Success", data: user });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: "Failed to create user" });
+    return res.status(500).json({ error: "Failed to GET an user" });
   }
 };
 
@@ -61,10 +77,10 @@ const updateUserController = async (req, res) => {
         .json({ status: "Failed", message: "User not found." });
     }
 
-    return res.json({ status: "Success", data: updateUser });
+    return res.json({ status: "Success", data: updatedUser });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: "Failed to create user" });
+    return res.status(500).json({ error: "Failed to UPDATE an user" });
   }
 };
 
@@ -90,7 +106,7 @@ const deleteUserController = async (req, res) => {
       });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: "Failed to create user" });
+    return res.status(500).json({ error: "Failed to DELETE an user" });
   }
 };
 
