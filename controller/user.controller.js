@@ -1,4 +1,4 @@
-const redis  = require("../redis/redis");
+const redis = require("../redis/redis");
 const {
   createUser,
   getUserById,
@@ -15,9 +15,16 @@ const createUserController = async (req, res) => {
       return res.status(400).json({ error: "Name and email are required" });
     }
 
-    const user = await createUser(name, email);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "Invalid email format" });
+    }
 
-    return res.status(201).json({ Status: "Success", Message: "User Created" });
+    const user = await createUser(name, email, null, "user"); // password is null and role is 'user'
+
+    return res
+      .status(201)
+      .json({ Status: "Success", Message: "User Created", data: user });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Failed to create user" });
@@ -28,15 +35,15 @@ const createUserController = async (req, res) => {
 const getUserByIdController = async (req, res) => {
   try {
     const { id } = req.params;
-    const key = `user:${id}`
+    const key = `user:${id}`;
 
     // First get user from redis
-    const cachedUser = await redis.get(key)
+    const cachedUser = await redis.get(key);
 
     // if found -> return
-    if(cachedUser) {
+    if (cachedUser) {
       console.log("Cache Hit");
-      return res.json(JSON.parse(cachedUser))
+      return res.json(JSON.parse(cachedUser));
     }
 
     console.log("Cache Miss");
@@ -50,7 +57,7 @@ const getUserByIdController = async (req, res) => {
     }
 
     // if not found -> first set in redis then return
-    await redis.set(key, JSON.stringify(user), 'EX', 60)
+    await redis.set(key, JSON.stringify(user), "EX", 60);
 
     return res.json({ status: "Success", data: user });
   } catch (error) {
@@ -76,6 +83,9 @@ const updateUserController = async (req, res) => {
         .status(404)
         .json({ status: "Failed", message: "User not found." });
     }
+    // invalidate redis cache after update
+    const key = `user:${id}`;
+    await redis.del(key);
 
     return res.json({ status: "Success", data: updatedUser });
   } catch (error) {
@@ -97,13 +107,15 @@ const deleteUserController = async (req, res) => {
         .json({ status: "Failed", message: "User not found." });
     }
 
-    return res
-      .status(200)
-      .json({
-        status: "Success",
-        message: "User deleted successfully",
-        data: deletedUser,
-      });
+    // invalidate redis cache after update
+    const key = `user:${id}`;
+    await redis.del(key);
+
+    return res.status(200).json({
+      status: "Success",
+      message: "User deleted successfully",
+      data: deletedUser,
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Failed to DELETE an user" });
