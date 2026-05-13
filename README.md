@@ -1,24 +1,31 @@
-# User Activity Service
+# Scalable User Management Backend
 
-A backend service built with Node.js, PostgreSQL, and Redis to manage user data efficiently with caching, rate limiting, and clean architecture.
+A scalable backend service built with Node.js, Express.js, PostgreSQL, and Redis featuring authentication, role-based access control, caching, pagination, and clean layered architecture.
 
 ---
 
 ## Overview
 
-This project demonstrates how to build a scalable backend service by separating concerns between:
+This project demonstrates how to build a scalable backend service with:
 
-* **Database (PostgreSQL)** → source of truth
-* **Redis** → caching & performance layer
-* **API Layer (Express)** → request handling
+* **JWT Authentication** → secure user authentication
+* **Role-Based Access Control** → protected access management
+* **PostgreSQL** → persistent database storage
+* **Redis** → caching & performance optimization
+* **Pagination** → efficient large data fetching
+* **Layered Architecture** → scalable and maintainable codebase
 
 ---
 
 ## Tech Stack
 
-* Node.js (Express)
+* Node.js
+* Express.js
 * PostgreSQL
-* Redis (Docker)
+* Redis
+* Docker
+* JWT Authentication
+* bcrypt
 * ioredis
 * pg (node-postgres)
 
@@ -36,9 +43,17 @@ Client → API → Redis → PostgreSQL
 
 ## Features
 
+### Authentication & Authorization
+
+* JWT-based authentication
+* Secure password hashing using bcrypt
+* Role-based access control (RBAC)
+* Protected routes using middleware
+
 ### ✅ User CRUD APIs
 
 * Create user
+* Get all users
 * Get user by ID
 * Update user
 * Delete user
@@ -50,6 +65,14 @@ Client → API → Redis → PostgreSQL
 * Cache user data (`GET /users/:id`)
 * Reduces response time and DB load
 * Uses TTL for automatic expiration
+* Reduced API response time from **186ms → 6ms**
+
+---
+
+### Pagination
+
+* Server-side pagination support
+* Efficient data fetching for large datasets
 
 ---
 
@@ -60,24 +83,49 @@ Client → API → Redis → PostgreSQL
 
 ---
 
-### Clean Architecture
+### Clean Layered Architecture
 
-* Controllers → request/response logic
-* Services → database queries
+```txt
+src/
+├── controllers/
+├── services/
+├── routes/
+├── middleware/
+├── redis/
+└── db/
+```
+
+* Controllers → request/response handling
+* Services → business logic & database queries
 * Routes → endpoint mapping
+* Middlewares → authentication, validation, error handling
 
 ---
 
 ## API Endpoints
 
-### Create User
+### Register User
 
-POST /users
+POST /auth/register
 
 ```json
 {
   "name": "Yash",
-  "email": "yash@mail.com"
+  "email": "yash@test.com",
+  "password": "yash@123"
+}
+```
+
+---
+
+### Login User
+
+POST /auth/login
+
+```json
+{
+  "email": "yash@test.com",
+  "password": "yash@123"
 }
 ```
 
@@ -199,23 +247,38 @@ curl http://localhost:8001/users/1
 ## Error Handling
 
 * 400 → Invalid input
+* 401 → Unauthorized
+* 403 → Forbidden
 * 404 → Resource not found
+* 429 → Too many requests
 * 500 → Internal server error
+  
+---
+
+## Performance Optimization
+
+* Redis caching reduces database load
+* Pagination improves query performance
+* Cache invalidation maintains consistency
+* Rate limiting prevents abuse
 
 ---
 
-## 📊 Key Learnings
+## Key Learnings
 
-* Implemented cache-aside pattern using Redis
-* Designed API with proper separation of concerns
-* Reduced database load using in-memory caching
-* Handled input validation and error responses
+* Implemented JWT authentication & RBAC
+* Used Redis cache-aside pattern
+* Improved API performance with Redis caching
+* Designed scalable layered architecture
+* Built secure and maintainable REST APIs
 
 ---
 
 ## Future Improvements
 
-* Add authentication (JWT)
-* Add pagination
-* Add automated tests (Jest + Supertest)
-* Dockerize entire app (API + DB + Redis)
+* Refresh token implementation
+* Swagger API documentation
+* Automated testing with Jest & Supertest
+* Docker Compose setup
+* CI/CD integration
+* Redis session management
