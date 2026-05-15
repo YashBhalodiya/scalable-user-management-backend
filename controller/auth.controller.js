@@ -1,5 +1,6 @@
 const authService = require("../services/auth.service");
 const { getUserByEmail, createUser } = require("../services/user.service");
+const { logActivity } = require("../services/activity.service");
 
 // POST (register)
 const authController = {
@@ -24,6 +25,15 @@ const authController = {
       const passwordHash = await authService.hashPassword(password);
 
       const newUser = await createUser(name, email, passwordHash, 'user'); 
+      
+      // log the activity
+      await logActivity(
+        newUser.id,
+        "USER_REGISTERED",
+        { email: newUser.email },
+        req.ip
+      );
+
       return res
         .status(201)
         .json({ message: "User registered successfully", userId: newUser.id, user: newUser });
@@ -57,6 +67,14 @@ const authController = {
       }
 
       const token = await authService.generateToken(user);
+
+      // log the login activity
+      await logActivity(
+        user.id,
+        "USER_LOGIN",
+        { email: user.email },
+        req.ip
+      );
 
       return res.status(200).json({
         message: "Login successful",

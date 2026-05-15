@@ -5,6 +5,7 @@ const {
   updateUser,
   deleteUser,
 } = require("../services/user.service");
+const { logActivity } = require("../services/activity.service");
 
 // POST /users
 const createUserController = async (req, res) => {
@@ -21,6 +22,15 @@ const createUserController = async (req, res) => {
     }
 
     const user = await createUser(name, email, null, "user"); // password is null and role is 'user'
+
+    // Log the created user (could be created by an admin)
+    const executorId = req.user ? req.user.id : user.id;
+    await logActivity(
+      executorId,
+      "USER_CREATED",
+      { targetUserId: user.id, email: user.email },
+      req.ip
+    );
 
     return res
       .status(201)
@@ -87,6 +97,13 @@ const updateUserController = async (req, res) => {
     const key = `user:${id}`;
     await redis.del(key);
 
+    await logActivity(
+      req.user ? req.user.id : id,
+      "USER_UPDATED",
+      { targetUserId: id, updatedFields: { name } },
+      req.ip
+    );
+
     return res.json({ status: "Success", data: updatedUser });
   } catch (error) {
     console.log(error);
@@ -98,24 +115,23 @@ const updateUserController = async (req, res) => {
 const deleteUserController = async (req, res) => {
   try {
     const { id } = req.params;
-
     const deletedUser = await deleteUser(id);
 
     if (!deletedUser) {
-      return res
-        .status(404)
-        .json({ status: "Failed", message: "User not found." });
+      return res.status(404).json({ status: "Failed", message: "User not found." });
     }
 
-    // invalidate redis cache after update
     const key = `user:${id}`;
     await redis.del(key);
 
-    return res.status(200).json({
-      status: "Success",
-      message: "User deleted successfully",
-      data: deletedUser,
-    });
+    await logActivity(
+      req.user ? req.user.id : id,
+      "USER_DELETED",
+      { targetUserId: id },
+      req.ip
+    );
+
+    return res.json({ status: "Success", message: "User deleted" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Failed to DELETE an user" });
