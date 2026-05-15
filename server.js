@@ -12,8 +12,8 @@ app.use(express.json())
 
 // user routes middleware
 app.use("/users", userRoute)
-app.use('/auth', authRouter)
-app.use('/activities', activityRouter)
+app.use("/auth", authRouter)
+app.use("/activities", activityRouter)
 
 const PORT = process.env.PORT || 8001
 app.listen(PORT, () => {
