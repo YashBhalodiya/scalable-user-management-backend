@@ -1,5 +1,4 @@
 const pool = require("../db/db");
-const ActivityService = require("./activity.service");
 
 async function createUser(name, email, password, role) {
   const result = await pool.query(
@@ -7,7 +6,6 @@ async function createUser(name, email, password, role) {
     [name, email, password, role],
   );
   const newUser = result.rows[0];
-  await ActivityService.logAction(newUser.id, 'CREATE', newUser.id, {new_data: newUser})
   return newUser
 }
 
@@ -29,10 +27,6 @@ async function updateUser(id, name) {
     [name, id],
   );
   const updatedUser = result.rows[0];
-  await ActivityService.logAction(updatedUser.id, 'UPDATE', { 
-    old_data: previousUser, 
-    new_data: updatedUser 
-  });
   return updatedUser;
 }
 
@@ -42,7 +36,6 @@ async function deleteUser(id) {
     [id],
   );
   const oldUser = result.rows[0];
-  await ActivityService.logAction(oldUser.id, 'DELETE', { deleted_data: oldUser });
   return result.rows[0];
 }
 
