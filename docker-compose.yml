@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_DB: ${DB_NAME:-myapp}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-server:
+    image: redis:7-alpine
+    container_name: redis-server
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: user-activity-service
+    ports:
+      - "${PORT:-8000}:${PORT:-8000}"
+    environment:
+      - PORT=${PORT:-8000}
+      - DB_USER=${DB_USER:-admin}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_NAME=${DB_NAME:-myapp}
+      - DB_HOST=postgres-db
+      - DB_PORT=5432
+      - REDIS_HOST=redis-server
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-453d83b42d0f92fc0214be04ce7ec31d7842cfdb8a11e712bc4487b34a04eff2}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-1h}
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      redis-server:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

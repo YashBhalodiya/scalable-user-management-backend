@@ -224,13 +224,30 @@ docker run -d \
 node db/init.js
 ```
 
----
-
 ### 7. Start server
 
 ```bash
 npm start
 ```
+
+---
+
+## Setup with Docker Compose
+
+Alternatively, you can run the entire stack (PostgreSQL, Redis, and the Node.js API server) with a single command using Docker Compose.
+
+### 1. Setup environment variables
+Copy the `.env.example` file to `.env`:
+```bash
+cp .env.example .env
+```
+*(Optionally adjust port or other configuration variables inside `.env`).*
+
+### 2. Start the services
+```bash
+docker-compose up --build
+```
+This command builds the API image, starts PostgreSQL and Redis containers, waits for them to pass their health checks, automatically initializes the database schema, and starts the API service.
 
 ---
 
@@ -279,6 +296,5 @@ curl http://localhost:8001/users/1
 * Refresh token implementation
 * Swagger API documentation
 * Automated testing with Jest & Supertest
-* Docker Compose setup
 * CI/CD integration
 * Redis session management
